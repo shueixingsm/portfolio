@@ -203,6 +203,17 @@ button { background: none; border: 0; color: inherit; font: inherit; cursor: poi
 .lang-switch__btn.is-active { color: var(--ink); border-bottom-color: var(--accent); }
 .lang-switch__sep { color: var(--ink-faint); font-size: .625rem; }
 
+/* home badge — 右上角返回首页 */
+.nav__home {
+  width: 34px; height: 34px;
+  border: 1px solid var(--line); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-dim);
+  transition: color .4s, border-color .4s, background-color .4s;
+}
+.nav__home:hover { color: var(--ink); border-color: rgba(234,230,223,.55); background: rgba(234,230,223,.06); }
+.nav__home svg { width: 15px; height: 15px; }
+
 /* fullscreen menu */
 .menu {
   position: fixed; inset: 0; z-index: 90;
