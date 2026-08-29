@@ -198,6 +198,16 @@ const WORKS = [
 
   /* ========== REAL-TIME VFX · 网格条目（点击放大，无案例页） ========== */
   {
+    id: "holo",
+    title: "HOLO",
+    year: "2026",
+    discipline: "rtvfx",
+    case: false,
+    poster: "assets/img/holo-poster.jpg",
+    video: { src: "assets/video/holo.mp4", poster: "assets/img/holo-poster.jpg" },
+    meta: { en: "Real-Time Hologram FX", zh: "实时全息视效" },
+  },
+  {
     id: "wormhole",
     title: "WORMHOLE",
     year: "2026",
