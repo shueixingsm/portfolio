@@ -1,6 +1,7 @@
 /* ============================================================
    CG PORTFOLIO — app.js
-   渲染（data.js 驱动）+ 动效（GSAP/Lenis）+ WebGL 流光背景
+   渲染（data.js 驱动）+ 动效（GSAP/Lenis）+ WebGL 流光 + 灯箱
+   页面：home / work（案例+旗舰）/ discipline（方向页）/ about
    ============================================================ */
 (function () {
   'use strict';
@@ -14,7 +15,7 @@
   const PAGE = document.body.dataset.page;
 
   /* ============================================================
-     语言：localStorage 记忆 → 浏览器语言探测 → 默认英文
+     语言
      ============================================================ */
   let LANG;
   try {
@@ -23,7 +24,6 @@
   } catch (e) { LANG = 'en'; }
   if (LANG !== 'zh' && LANG !== 'en') LANG = 'en';
   const I = () => I18N[LANG];
-  /* 取值：{en,zh} 对象按当前语言取，普通字符串原样返回 */
   const t = v => (v && typeof v === 'object' && (v.en || v.zh)) ? (v[LANG] || v.en) : v;
 
   function setLang(lang) {
@@ -31,7 +31,7 @@
     LANG = lang;
     try {
       localStorage.setItem('lang', lang);
-      sessionStorage.setItem('lang-switched', '1');   // 重载后跳过 preloader
+      sessionStorage.setItem('lang-switched', '1');
     } catch (e) {}
     location.reload();
   }
@@ -46,27 +46,22 @@
   }
 
   /* ============================================================
-     WebGL — 流光背景（玻璃光感，无 glitch）
+     WebGL — 流光背景
      ============================================================ */
   class AuraFlow {
     constructor(canvas, opts) {
       this.canvas = canvas;
-      this.o = Object.assign({
-        hue: 'blue',       // blue | gold | cyan
-        speed: 1.0,
-        mouse: false,
-        opacity: 1,
-      }, opts || {});
+      this.o = Object.assign({ hue: 'blue', speed: 1.0, mouse: false, opacity: 1 }, opts || {});
       this.mouseX = .5; this.mouseY = .45;
       this.tx = .5; this.ty = .45;
       this.gl = canvas.getContext('webgl', { alpha: true, antialias: false });
-      if (!this.gl) return;              // WebGL 不可用 → CSS 背景兜底
+      if (!this.gl) return;
       this._build();
       this._resize();
       this._events();
-      if (REDUCED) { this._draw(0); }    // 只画一帧
-      else this._loop = (t) => { this._draw(t); this._raf = requestAnimationFrame(this._loop); };
-      if (!REDUCED) this._raf = requestAnimationFrame(this._loop);
+      if (REDUCED) { this._draw(0); return; }
+      this._loop = (t) => { this._draw(t); this._raf = requestAnimationFrame(this._loop); };
+      this._raf = requestAnimationFrame(this._loop);
     }
     _build() {
       const gl = this.gl;
@@ -96,7 +91,6 @@
           vec2 uv=(gl_FragCoord.xy-.5*u_res)/min(u_res.x,u_res.y);
           float t=u_t*.015*u_speed;
           vec2 m=(u_mouse-.5)*.35;
-          /* domain-warped flow */
           vec2 q=vec2(fbm(uv*1.4+t), fbm(uv*1.4+vec2(5.2,1.3)-t*.7));
           vec2 r=vec2(fbm(uv*1.8+3.4*q+vec2(1.7,9.2)+t*.6),
                       fbm(uv*1.8+3.4*q+vec2(8.3,2.8)-t*.4));
@@ -104,12 +98,11 @@
           vec3 c0=${pal[0]}, c1=${pal[1]}, c2=${pal[2]}, c3=${pal[3]};
           vec3 col=mix(c0,c1,clamp(f*1.6,0.,1.));
           col=mix(col,c2,clamp(length(r)*.85-.25,0.,1.));
-          /* key light — 偏右上的光团，被鼠标轻微牵引 */
           vec2 lp=vec2(.42,-.28)-m*.6;
           float glow=exp(-2.6*dot(uv-lp,uv-lp));
           col+=c3*glow*.34;
-          col*=1.-.42*dot(uv,uv);            /* vignette */
-          float g=(hash(gl_FragCoord.xy+fract(u_t))-.5)*.028; /* grain 防 banding */
+          col*=1.-.42*dot(uv,uv);
+          float g=(hash(gl_FragCoord.xy+fract(u_t))-.5)*.028;
           gl_FragColor=vec4(col+g, u_op);
         }`;
       const sh = (type, src) => {
@@ -139,7 +132,6 @@
       gl.uniform1f(this.u.speed, this.o.speed);
       gl.uniform1f(this.u.op, this.o.opacity);
     }
-    _palette(P) { return `c0=${P.blue},c1=${P.blue},c2=${P.blue},c3=${P.blue};`.length && ''; }
     _events() {
       if (this.o.mouse) {
         window.addEventListener('pointermove', (e) => {
@@ -166,15 +158,10 @@
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
   }
+
   /* ============================================================
-     文字拆分（SplitText 替代）
+     文字拆行
      ============================================================ */
-  function splitRows(el, text) {
-    const words = String(text).split(/\s+/).filter(Boolean);
-    el.innerHTML = words.map(w => `<span class="row"><span>${w}</span></span>`).join('');
-    return $$('span.row > span', el);
-  }
-  /* 按预设行渲染（hero 署名用，不拆词）；多行时末行加空心描边，末行文字后接延伸细线 */
   function renderLines(el, lines) {
     const multi = lines.length > 1;
     el.innerHTML = lines.map((w, i) => {
@@ -190,13 +177,11 @@
      ============================================================ */
   function runPreloader(onDone) {
     const pre = $('#preloader'), count = $('#preloader-count'), nameEl = $('#preloader-name');
-    /* 语言切换重载：跳过计数动画，快速进入页面 */
     let switched = false;
     try { switched = sessionStorage.getItem('lang-switched') === '1'; sessionStorage.removeItem('lang-switched'); } catch (e) {}
     if (REDUCED || switched) { pre.remove(); onDone(); return; }
     document.body.classList.add('is-loading');
     nameEl.textContent = SITE.name;
-    /* 兜底：标签页在后台时 rAF 被冻结、GSAP 时间线停摆 —— 4s 后强制放行，回前台后动画继续 */
     let fired = false;
     const finish = () => {
       if (fired) return;
@@ -231,7 +216,7 @@
   }
 
   /* ============================================================
-     通用：光标 / 菜单 / 页脚 / 磁性按钮 / 滚动
+     通用
      ============================================================ */
   let lenis = null;
   function initScroll() {
@@ -307,7 +292,6 @@
       timeEl.textContent = `${pad2(d.getHours())}:${pad2(d.getMinutes())} GMT${d.getTimezoneOffset() <= 0 ? '+' : '-'}${Math.abs(d.getTimezoneOffset() / 60)}`;
     };
     tick(); setInterval(tick, 10000);
-    /* menu foot */
     const mf = $('#menu-foot');
     if (mf) mf.innerHTML = `<span>${SITE.email}</span><span>${t(SITE.location)}</span>`;
   }
@@ -315,7 +299,6 @@
   function initMagnetic() {
     if (!FINE || REDUCED) return;
     $$('.btn-magnetic').forEach(btn => {
-      const label = $('.btn-magnetic__label', btn) || btn;
       btn.addEventListener('mousemove', (e) => {
         const r = btn.getBoundingClientRect();
         const dx = e.clientX - (r.left + r.width / 2);
@@ -331,16 +314,15 @@
   function initNavText() {
     const logo = $('#nav-logo');
     if (logo) logo.textContent = SITE.name;
-    /* 导航 / 菜单文案（i18n） */
     const L = I();
     const navLinks = $$('.nav__link');
     if (navLinks.length >= 3) {
       navLinks[0].textContent = L.navWork;
-      navLinks[1].textContent = L.navInfo;
+      navLinks[1].textContent = L.navAbout;
       navLinks[2].textContent = L.navContact;
     }
     $$('.menu__link').forEach((a, i) => {
-      const labels = [L.navWork, L.navInfo, L.navContact];
+      const labels = [L.navWork, L.navAbout, L.navContact];
       const nums = L.menuNums;
       if (labels[i]) a.innerHTML = `<span class="menu__num">${nums[i]}</span>${labels[i]}`;
     });
@@ -351,21 +333,18 @@
 
   function initReveals(root) {
     const scope = root || document;
-    /* fade-ups */
     $$('.reveal-fade', scope).forEach(el => {
       gsap.to(el, {
         opacity: 1, y: 0, duration: 1.1, ease: 'power3.out',
         scrollTrigger: { trigger: el, start: 'top 88%' },
       });
     });
-    /* masked lines */
     $$('.reveal-mask > span', scope).forEach(el => {
       gsap.to(el, {
         y: 0, duration: 1.1, ease: 'power4.out',
         scrollTrigger: { trigger: el.parentElement, start: 'top 90%' },
       });
     });
-    /* hairlines */
     $$('.reveal-line', scope).forEach(el => {
       gsap.to(el, {
         scaleX: 1, duration: 1.2, ease: 'power4.inOut',
@@ -374,217 +353,423 @@
     });
   }
 
-  function scrollToHash() {
-    if (!location.hash) return;
-    const target = $(location.hash);
-    if (!target) return;
-    setTimeout(() => {
-      if (lenis) lenis.scrollTo(target, { offset: -20 });
-      else target.scrollIntoView({ behavior: 'auto' });
-    }, 1200);
+  /* ============================================================
+     灯箱（网格条目 / 无案例页精选卡片 点击放大播放）
+     ============================================================ */
+  function ensureLightbox() {
+    if ($('#lightbox')) return;
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="lightbox" id="lightbox" aria-hidden="true">
+        <button class="lightbox__close" id="lightbox-close" aria-label="Close" data-cursor="hover">✕</button>
+        <div class="lightbox__stage">
+          <video id="lightbox-video" playsinline controls loop></video>
+        </div>
+        <div class="lightbox__cap"><span id="lb-title"></span><span id="lb-meta"></span></div>
+      </div>`);
+    const lb = $('#lightbox'), video = $('#lightbox-video');
+    const close = () => {
+      lb.classList.remove('is-open');
+      lb.setAttribute('aria-hidden', 'true');
+      video.pause();
+      if (lenis) lenis.start();
+    };
+    $('#lightbox-close').addEventListener('click', close);
+    lb.addEventListener('click', (e) => { if (e.target === lb) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && lb.classList.contains('is-open')) close(); });
+  }
+
+  function openLightbox(src, poster, title, meta) {
+    ensureLightbox();
+    const lb = $('#lightbox'), video = $('#lightbox-video');
+    $('#lb-title').textContent = title || '';
+    $('#lb-meta').textContent = meta || '';
+    video.poster = poster || '';
+    video.src = src;
+    lb.classList.add('is-open');
+    lb.setAttribute('aria-hidden', 'false');
+    if (lenis) lenis.stop();
+    video.muted = false;
+    const p = video.play();
+    if (p) p.catch(() => { video.muted = true; video.play().catch(() => {}); });
+  }
+
+  /* hover 播放绑定（网格单元 / 无案例卡片共用） */
+  function bindHoverVideo(scope) {
+    if (!FINE || REDUCED) return;
+    $$('.study-cell, .selected-card', scope).forEach(cell => {
+      const v = $('video', cell);
+      if (!v) return;
+      cell.addEventListener('mouseenter', () => {
+        if (!v.readyState) v.load();
+        v.play().catch(() => {});
+      });
+      cell.addEventListener('mouseleave', () => { v.pause(); });
+    });
+  }
+
+  /* 无案例页条目：点击 → 灯箱 */
+  function bindLightboxLinks(scope) {
+    $$('[data-lb]', scope).forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        openLightbox(el.dataset.lb, el.dataset.poster, el.dataset.title, el.dataset.meta);
+      });
+    });
   }
 
   /* ============================================================
-     HOME 渲染
+     HOME
      ============================================================ */
   function renderHome() {
     const L = I();
-    const featured = WORKS.filter(w => w.featured);
-    const recent = WORKS.filter(w => !w.featured);
+    const selected = WORKS.filter(w => w.selected);
+    const disc = id => DISCIPLINES.find(d => d.id === id);
 
-    const years = WORKS.map(w => w.year).filter((v, i, a) => a.indexOf(v) === i).sort();
-    $('#hero-kicker').textContent = `${L.heroKicker} — ${years[0]} — ${Math.max(...WORKS.map(w => +w.year))}`;
+    $('#hero-kicker').textContent = L.heroKicker;
     $('#hero-location').textContent = t(SITE.location);
-    $('#hero-avail').textContent = L.heroAvail;
     $('.hero__foot-scroll').innerHTML = `${L.heroScroll}<span class="hero__scroll-line"></span>`;
-    $('#featured-label').textContent = L.featuredLabel;
-    $('#featured-count').textContent = `${pad2(featured.length)} ${L.projectsSuffix}`;
-    $('#recent-label').textContent = L.recentLabel;
-    $('#recent-count').textContent = `${pad2(recent.length)} ${L.projectsSuffix}`;
-    $('#about-text').innerHTML = L.aboutText;
+    $('#selected-label').textContent = L.selectedLabel;
+    $('#selected-count').textContent = `${pad2(selected.length)} ${L.selectedSuffix}`;
+    $('#explore-label').textContent = L.exploreLabel;
+    $('#explore-count').textContent = pad2(DISCIPLINES.length);
+    $('#about-text').innerHTML = L.aboutStrip;
     $('.btn-magnetic__label').textContent = L.moreAbout;
 
-    /* featured cards */
-    $('#featured-list').innerHTML = featured.map((w, i) => `
-      <a class="featured-card" href="work.html?w=${w.id}" data-cursor="hover" data-video="${w.film.src}">
-        <div class="featured-card__media reveal-fade">
+    /* 精选作品卡 */
+    $('#selected-list').innerHTML = selected.map((w, i) => {
+      const d = disc(w.discipline);
+      const label = w.subtitle ? t(w.subtitle) : t(d.title);
+      const href = w.case ? `work.html?w=${w.id}` : `discipline.html?d=${w.discipline}`;
+      const hoverSrc = w.video ? w.video.src : (w.film ? w.film.src : w.episodes[0].src);
+      const lb = w.case ? '' :
+        ` data-lb="${hoverSrc}" data-poster="${w.poster}" data-title="${w.title}" data-meta="${t(w.meta || label)} · ${w.year}"`;
+      return `
+      <a class="selected-card${w.case ? '' : ' is-lb'}" href="${href}" data-cursor="hover"${lb}>
+        <div class="selected-card__media reveal-fade">
           <img src="${w.poster}" alt="${w.title}" loading="lazy">
-          <video muted loop playsinline preload="none" src="${w.film.src}"></video>
-          <span class="featured-card__play">View</span>
+          <video muted loop playsinline preload="none" src="${hoverSrc}"></video>
+          <span class="selected-card__play">${L.view}</span>
         </div>
-        <div class="featured-card__row reveal-fade">
-          <h3 class="featured-card__title">${w.title}</h3>
-          <span class="featured-card__cat">${t(w.category)}</span>
+        <div class="selected-card__row reveal-fade">
+          <h3 class="selected-card__title"><span class="selected-card__num">${pad2(i + 1)}</span>${w.title}</h3>
+          <span class="selected-card__cat">${label}</span>
         </div>
-        <div class="featured-card__meta reveal-fade">
-          <span>${pad2(i + 1)}</span><span>${w.year}</span><span>${t(w.role)}</span>
+        <div class="selected-card__meta reveal-fade">
+          <span>${t(d.title)}</span><span>${w.year}</span>
         </div>
+      </a>`;
+    }).join('');
+
+    /* 方向入口 */
+    $('#disc-list').innerHTML = DISCIPLINES.map(d => `
+      <a class="disc-row" href="discipline.html?d=${d.id}" data-cursor="hover">
+        <span class="disc-row__num">${d.num}</span>
+        <span class="disc-row__title">${t(d.title)}</span>
+        <span class="disc-row__note">${t(d.note)}</span>
+        <span class="disc-row__arrow">→</span>
       </a>`).join('');
 
-    /* recent rows */
-    $('#recent-list').innerHTML = recent.map((w, i) => `
-      <a class="work-row" href="work.html?w=${w.id}" data-cursor="hover" data-poster="${w.poster}" data-video="${w.film.src}">
-        <span class="work-row__num">${pad2(featured.length + i + 1)}</span>
-        <h3 class="work-row__title">${w.title}</h3>
-        <span class="work-row__cat">${t(w.category)}</span>
-        <span class="work-row__year">${w.year}</span>
-        <span class="work-row__arrow">→</span>
-      </a>`).join('');
-
-    /* hero text */
+    /* hero 大字 */
     const heroTitle = $('#hero-title');
     heroTitle.setAttribute('aria-label', SITE.name);
     renderLines(heroTitle, t(SITE.nameLines));
     $('#hero-role').textContent = t(SITE.role);
+    $('#hero-sub').textContent = t(SITE.subtitle);
   }
 
   function initHomeFx() {
-    /* hero canvas */
     new AuraFlow($('#hero-canvas'), { hue: 'blue', speed: 1, mouse: true });
     const fc = $('#footer-canvas');
     if (fc) new AuraFlow(fc, { hue: 'blue', speed: .6, opacity: .5 });
 
-    /* hero entrance */
-    const rows = $$('#hero-title .row > span');
+    const rows = $$('#hero-title .row > span:not(.hero-rule)');
     const intro = gsap.timeline({ delay: REDUCED ? 0 : .15 });
     intro.to('#hero-kicker', { y: 0, duration: 1, ease: 'power3.out' }, .05)
       .to(rows, { y: 0, duration: 1.3, stagger: .09, ease: 'power4.out' }, .15)
       .fromTo('.hero-rule', { scaleX: 0 }, { scaleX: 1, duration: 1.5, ease: 'power4.inOut' }, '-=.7')
       .to('#hero-role', { y: 0, duration: 1, ease: 'power3.out' }, '-=.9')
+      .to('#hero-sub', { y: 0, duration: 1, ease: 'power3.out' }, '-=.85')
       .fromTo('.hero__foot', { opacity: 0 }, { opacity: 1, duration: 1 }, '-=.6');
 
-    /* featured card hover → video */
-    $$('.featured-card').forEach(card => {
-      const v = $('video', card);
-      if (!v) return;
-      card.addEventListener('mouseenter', () => {
-        if (!v.readyState) v.load();
-        v.play().catch(() => {});
-      });
-      card.addEventListener('mouseleave', () => { v.pause(); });
-    });
+    bindHoverVideo(document);
+    bindLightboxLinks(document);
 
-    /* recent rows → floating preview */
-    const prev = $('#work-preview'), pimg = $('#work-preview-img'), pvid = $('#work-preview-video');
-    const list = $('#recent-list');
-    if (prev && FINE && !REDUCED) {
-      let px = 0, py = 0, tx2 = 0, ty2 = 0, active = false, rafOn = false;
-      const loop = () => {
-        px += (tx2 - px) * .12; py += (ty2 - py) * .12;
-        prev.style.left = px + 'px'; prev.style.top = py + 'px';
-        if (active || Math.abs(tx2 - px) > .5) requestAnimationFrame(loop);
-        else rafOn = false;
-      };
-      list.addEventListener('mousemove', (e) => {
-        tx2 = e.clientX; ty2 = e.clientY;
-        if (!rafOn) { rafOn = true; requestAnimationFrame(loop); }
-      });
-      $$('.work-row', list).forEach(row => {
-        row.addEventListener('mouseenter', () => {
-          active = true;
-          pimg.src = row.dataset.poster;
-          prev.classList.remove('is-media-ready');
-          pvid.src = row.dataset.video;
-          pvid.play().then(() => prev.classList.add('is-media-ready')).catch(() => {});
-          gsap.to(prev, { opacity: 1, scale: 1, rotate: 0, duration: .55, ease: 'power3.out' });
-        });
-        row.addEventListener('mouseleave', () => {
-          active = false;
-          gsap.to(prev, { opacity: 0, scale: .85, rotate: -2, duration: .4, ease: 'power2.in' });
-          setTimeout(() => { if (!active) pvid.pause(); }, 400);
-        });
-      });
-    }
-
-    /* section reveals */
     initReveals(document);
-    /* 行列表：先隐藏，再批量入场 */
-    gsap.set('.work-row', { opacity: 0, y: 30 });
-    ScrollTrigger.batch('.work-row', {
+    gsap.set('.disc-row', { opacity: 0, y: 30 });
+    ScrollTrigger.batch('.disc-row', {
       start: 'top 92%',
-      onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, duration: .9, stagger: .07, ease: 'power3.out' }),
+      onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, duration: .9, stagger: .08, ease: 'power3.out' }),
     });
   }
 
   /* ============================================================
-     WORK PAGE 渲染
+     DISCIPLINE 方向页
      ============================================================ */
+  function renderDiscipline() {
+    const L = I();
+    const id = new URLSearchParams(location.search).get('d') || 'aifilm';
+    const d = DISCIPLINES.find(x => x.id === id) || DISCIPLINES[0];
+    document.title = `${t(d.title)} — ${SITE.name}`;
+
+    const items = WORKS.filter(w => w.discipline === d.id);
+    const originals = items.filter(w => w.group === 'original');
+    const experiments = items.filter(w => w.group === 'experiment');
+    const others = items.filter(w => !w.group);
+
+    /* 单元格（网格条目 / 卡片共用内部 media） */
+    const cell = (w, i, lazy) => {
+      const src = w.video ? w.video.src : w.film.src;
+      const poster = w.video ? w.video.poster : w.film.poster;
+      const href = w.case ? `work.html?w=${w.id}` : `discipline.html?d=${d.id}`;
+      const lb = w.case ? '' :
+        ` data-lb="${src}" data-poster="${poster}" data-title="${w.title}" data-meta="${t(w.meta)} · ${w.year}"`;
+      return `
+      <a class="study-cell${w.case ? '' : ' is-lb'}" href="${href}" data-cursor="hover"${lb}>
+        <div class="study-cell__media">
+          <img src="${poster}" alt="${w.title}" ${lazy ? 'loading="lazy"' : ''}>
+          <video muted loop playsinline preload="none" src="${src}"></video>
+          <span class="study-cell__play">${L.play}</span>
+        </div>
+        <div class="study-cell__row">
+          <span class="study-cell__num">${pad2(i + 1)}</span>
+          <h3 class="study-cell__title">${w.title}</h3>
+        </div>
+        <div class="study-cell__meta"><span>${t(w.meta)}</span><span>${w.year}</span></div>
+      </a>`;
+    };
+
+    const sub = (label) => `
+      <div class="wp-section-head"><span class="wp-section-head__label">${label}</span><span class="wp-section-head__line reveal-line"></span></div>`;
+
+    let body = '';
+    if (d.id === 'aifilm') {
+      body = `
+        ${sub(L.originals)}
+        <div class="originals-list">${originals.map((w, i) => `
+          <a class="original-card" href="work.html?w=${w.id}" data-cursor="hover">
+            <div class="original-card__media reveal-fade">
+              <img src="${w.poster}" alt="${w.title}">
+              <video muted loop playsinline preload="none" src="${w.film ? w.film.src : w.episodes[0].src}"></video>
+            </div>
+            <div class="original-card__row reveal-fade">
+              <h3 class="original-card__title">${w.title}</h3>
+              <span class="original-card__sub">${t(w.subtitle)}</span>
+            </div>
+          </a>`).join('')}
+        </div>
+        ${sub(L.experiments)}
+        <div class="studies-grid">${experiments.map((w, i) => cell(w, i, true)).join('')}</div>`;
+    } else if (d.id === 'rtvfx') {
+      body = `${sub(d.id === 'rtvfx' ? 'VFX Studies' : '')}
+        <div class="studies-grid">${others.map((w, i) => cell(w, i, true)).join('')}</div>`;
+    } else {
+      body = `<div class="studies-grid cin-grid">${others.map((w, i) => cell(w, i, true)).join('')}</div>`;
+    }
+
+    $('#discipline-page').innerHTML = `
+      <section class="dp-hero">
+        <p class="dp-hero__cat label reveal-fade">${d.num} — ${t(d.note)}</p>
+        <h1 class="dp-hero__title" id="dp-title"></h1>
+        <p class="dp-hero__desc reveal-fade">${t(d.desc)}</p>
+      </section>
+      <section class="dp-body">${body}</section>
+    `;
+
+    const titleRows = t(d.title).split(/\s+/).map(w => `<span class="row"><span>${w}</span></span>`).join('');
+    $('#dp-title').innerHTML = titleRows;
+    const rows = $$('#dp-title .row > span');
+    gsap.timeline({ delay: REDUCED ? 0 : .15 })
+      .fromTo('.dp-hero__cat', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .9, ease: 'power3.out' }, .05)
+      .to(rows, { y: 0, duration: 1.2, stagger: .08, ease: 'power4.out' }, .15);
+
+    bindHoverVideo(document);
+    bindLightboxLinks(document);
+    initReveals(document);
+    /* 原创大卡 hover 播放 */
+    if (FINE && !REDUCED) {
+      $$('.original-card').forEach(card => {
+        const v = $('video', card);
+        if (!v) return;
+        card.addEventListener('mouseenter', () => { if (!v.readyState) v.load(); v.play().catch(() => {}); });
+        card.addEventListener('mouseleave', () => { v.pause(); });
+      });
+    }
+  }
+
+  /* ============================================================
+     WORK 案例页（旗舰 / 普通）
+     ============================================================ */
+  function filmFrame(src, poster, label) {
+    const L = I();
+    return `
+      <div class="wp-film__frame">
+        <video muted loop playsinline preload="metadata" poster="${poster}" src="${src}"></video>
+        <img class="wp-film__poster" src="${poster}" alt="">
+        <button class="wp-film__coverbtn" aria-label="${L.play}" data-cursor="hover">
+          <span class="wp-film__coverbtn-label">${L.play}</span>
+        </button>
+      </div>`;
+  }
+
+  function bindFilmFrames(scope) {
+    $$('.wp-film__frame', scope).forEach(frame => {
+      const video = $('video', frame);
+      const btn = $('.wp-film__coverbtn', frame);
+      btn.addEventListener('click', () => {
+        frame.classList.add('is-playing');
+        video.currentTime = 0;
+        video.muted = false;
+        const p = video.play();
+        if (p) p.catch(() => { video.muted = true; video.play().catch(() => {}); });
+      });
+      frame.addEventListener('click', (e) => {
+        if (!frame.classList.contains('is-playing') || e.target.closest('.wp-film__coverbtn')) return;
+        frame.classList.remove('is-playing');
+        video.pause();
+      });
+    });
+  }
+
   function renderWork() {
     const L = I();
+    const caseWorks = WORKS.filter(w => w.case);
     const id = new URLSearchParams(location.search).get('w');
-    const idx = Math.max(0, WORKS.findIndex(w => w.id === id));
-    const w = WORKS[idx];
-    const prev = WORKS[(idx - 1 + WORKS.length) % WORKS.length];
-    const next = WORKS[(idx + 1) % WORKS.length];
+    const idx = Math.max(0, caseWorks.findIndex(w => w.id === id));
+    const w = caseWorks[idx];
+    const prev = caseWorks[(idx - 1 + caseWorks.length) % caseWorks.length];
+    const next = caseWorks[(idx + 1) % caseWorks.length];
 
     document.title = `${w.title} — ${SITE.name}`;
+    const titleRows = w.title.split(/\s+/).map(tt => `<span class="row"><span>${tt}</span></span>`).join('');
+    const d = DISCIPLINES.find(x => x.id === w.discipline);
 
-    const titleRows = w.title.split(/\s+/)
-      .map(tt => `<span class="row"><span>${tt}</span></span>`).join('');
+    let main = '';
+    if (w.flagship) {
+      /* ---- 旗舰：FILM / CONCEPT / VISUAL DEV / PROCESS / CREDITS ---- */
+      main = `
+        <section class="wp-hero">
+          <p class="wp-hero__cat label">${t(w.subtitle)}</p>
+          <h1 class="wp-hero__title">${titleRows}</h1>
+        </section>
 
-    const chapters = w.process.map((c, i) => `
-      <div class="wp-chapter ${i % 2 ? 'wp-chapter--flip' : ''}">
-        <div class="wp-chapter__head">
-          <span class="wp-chapter__num">${L.chapter} ${pad2(i + 1)}</span>
-          <h3 class="wp-chapter__title reveal-mask"><span>${t(c.title)}</span></h3>
+        <div class="wp-meta reveal-fade">
+          <div class="wp-meta__item"><span class="wp-meta__label">${L.metaYear}</span><span class="wp-meta__value">${w.year}</span></div>
+          <div class="wp-meta__item"><span class="wp-meta__label">${L.metaCategory}</span><span class="wp-meta__value">${t(w.subtitle)}</span></div>
+          <div class="wp-meta__item"><span class="wp-meta__label">${t(d.title)}</span><span class="wp-meta__value">${t(d.title)}</span></div>
+          <div class="wp-meta__item"><span class="wp-meta__label">${L.metaRole}</span><span class="wp-meta__value">${t(w.credits[0].role)}</span></div>
         </div>
-        <div class="wp-chapter__grid">
-          <p class="wp-chapter__text reveal-fade">${t(c.text)}</p>
-          <div class="wp-chapter__media"><img src="${c.image}" alt="${t(c.title)}" loading="lazy"></div>
-        </div>
-      </div>`).join('');
 
-    $('#workpage').innerHTML = `
-      <section class="wp-hero">
-        <p class="wp-hero__cat label">${t(w.category)} — ${w.year}</p>
-        <h1 class="wp-hero__title">${titleRows}</h1>
-      </section>
-
-      <div class="wp-meta reveal-fade">
-        <div class="wp-meta__item"><span class="wp-meta__label">${L.metaYear}</span><span class="wp-meta__value">${w.year}</span></div>
-        <div class="wp-meta__item"><span class="wp-meta__label">${L.metaCategory}</span><span class="wp-meta__value">${t(w.category)}</span></div>
-        <div class="wp-meta__item"><span class="wp-meta__label">${L.metaRole}</span><span class="wp-meta__value">${t(w.role)}</span></div>
-        <div class="wp-meta__item"><span class="wp-meta__label">${L.metaClient}</span><span class="wp-meta__value">${t(w.client)}</span></div>
-      </div>
-
-      <section class="wp-synopsis">
-        <div class="wp-section-head"><span class="wp-section-head__label">${L.secSynopsis}</span><span class="wp-section-head__line reveal-line"></span></div>
-        <p class="wp-synopsis__text reveal-fade">${t(w.synopsis)}</p>
-      </section>
-
-      <section class="wp-film">
-        <div class="wp-section-head"><span class="wp-section-head__label">${L.secFilm}</span><span class="wp-section-head__line reveal-line"></span></div>
-        <div class="wp-film__frame" id="film-frame">
-          <video id="film-video" muted loop playsinline preload="metadata" poster="${w.film.poster}" src="${w.film.src}"></video>
-          <img class="wp-film__poster" src="${w.film.poster}" alt="">
-          <button class="wp-film__coverbtn" id="film-play" aria-label="${L.play}" data-cursor="hover">
-            <span class="wp-film__coverbtn-label">${L.play}</span>
-          </button>
-        </div>
-        <p class="wp-film__caption reveal-fade">${w.title} — ${w.year} · ${t(w.category)}</p>
-      </section>
-
-      <section class="wp-process">
-        <div class="wp-section-head"><span class="wp-section-head__label">${L.secProcess}</span><span class="wp-section-head__line reveal-line"></span></div>
-        ${chapters}
-      </section>
-
-      ${w.quote ? `
-      <section class="wp-quote">
-        <p class="wp-quote__text reveal-fade">${t(w.quote)}</p>
-      </section>` : ''}
-
-      <section class="wp-credits">
-        <div class="wp-section-head"><span class="wp-section-head__label">${L.secCredits}</span><span class="wp-section-head__line reveal-line"></span></div>
-        <div class="wp-credits__grid">
-          ${w.credits.map(c => `
-            <div class="wp-credits__row reveal-fade">
-              <span class="wp-credits__role">${t(c.role)}</span>
-              <span class="wp-credits__name">${t(c.name)}</span>
+        <section class="wp-section">
+          <div class="wp-section-head"><span class="wp-section-head__label">01 — ${L.secFilm}</span><span class="wp-section-head__line reveal-line"></span></div>
+          ${w.episodes.map(ep => `
+            <div class="ep-block">
+              <p class="ep-block__label reveal-fade">${t(ep.label)}</p>
+              ${filmFrame(ep.src, ep.poster)}
             </div>`).join('')}
-        </div>
-      </section>
+        </section>
 
+        <section class="wp-section">
+          <div class="wp-section-head"><span class="wp-section-head__label">02 — ${L.secConcept}</span><span class="wp-section-head__line reveal-line"></span></div>
+          <div class="concept-list">
+            ${w.concept.map(c => `
+              <div class="concept-row reveal-fade">
+                <span class="concept-row__k">${t(c.k)}</span>
+                <span class="concept-row__v">${t(c.v)}</span>
+              </div>`).join('')}
+          </div>
+        </section>
+
+        <section class="wp-section">
+          <div class="wp-section-head"><span class="wp-section-head__label">03 — ${L.secVisualDev}</span><span class="wp-section-head__line reveal-line"></span></div>
+          ${w.visualdev.map((c, i) => `
+            <div class="wp-chapter ${i % 2 ? 'wp-chapter--flip' : ''}">
+              <div class="wp-chapter__head">
+                <span class="wp-chapter__num">${pad2(i + 1)}</span>
+                <h3 class="wp-chapter__title reveal-mask"><span>${t(c.title)}</span></h3>
+              </div>
+              <div class="wp-chapter__grid">
+                <p class="wp-chapter__text reveal-fade">${t(c.text)}</p>
+                <div class="wp-chapter__media"><img src="${c.image}" alt="${t(c.title)}" loading="lazy"></div>
+              </div>
+            </div>`).join('')}
+        </section>
+
+        <section class="wp-section">
+          <div class="wp-section-head"><span class="wp-section-head__label">04 — ${L.secProcess}</span><span class="wp-section-head__line reveal-line"></span></div>
+          <div class="process-list">
+            ${w.process.map((p, i) => `
+              <div class="process-row reveal-fade">
+                <span class="process-row__num">${pad2(i + 1)}</span>
+                <h3 class="process-row__title">${t(p.title)}</h3>
+                <p class="process-row__text">${t(p.text)}</p>
+              </div>`).join('')}
+          </div>
+        </section>
+
+        <section class="wp-section">
+          <div class="wp-section-head"><span class="wp-section-head__label">05 — ${L.secCredits}</span><span class="wp-section-head__line reveal-line"></span></div>
+          <div class="wp-credits__grid">
+            ${w.credits.map(c => `
+              <div class="wp-credits__row reveal-fade">
+                <span class="wp-credits__role">${t(c.role)}</span>
+                <span class="wp-credits__name">${t(c.name)}</span>
+              </div>`).join('')}
+          </div>
+        </section>`;
+    } else {
+      /* ---- 普通案例 ---- */
+      const chapters = w.process.map((c, i) => `
+        <div class="wp-chapter ${i % 2 ? 'wp-chapter--flip' : ''}">
+          <div class="wp-chapter__head">
+            <span class="wp-chapter__num">${L.chapter} ${pad2(i + 1)}</span>
+            <h3 class="wp-chapter__title reveal-mask"><span>${t(c.title)}</span></h3>
+          </div>
+          <div class="wp-chapter__grid">
+            <p class="wp-chapter__text reveal-fade">${t(c.text)}</p>
+            <div class="wp-chapter__media"><img src="${c.image}" alt="${t(c.title)}" loading="lazy"></div>
+          </div>
+        </div>`).join('');
+      main = `
+        <section class="wp-hero">
+          <p class="wp-hero__cat label">${t(d.title)} — ${w.year}</p>
+          <h1 class="wp-hero__title">${titleRows}</h1>
+        </section>
+
+        <div class="wp-meta reveal-fade">
+          <div class="wp-meta__item"><span class="wp-meta__label">${L.metaYear}</span><span class="wp-meta__value">${w.year}</span></div>
+          <div class="wp-meta__item"><span class="wp-meta__label">${L.metaCategory}</span><span class="wp-meta__value">${t(d.title)}</span></div>
+          <div class="wp-meta__item"><span class="wp-meta__label">${L.metaRole}</span><span class="wp-meta__value">${t(w.meta)}</span></div>
+        </div>
+
+        <section class="wp-synopsis">
+          <div class="wp-section-head"><span class="wp-section-head__label">${L.secSynopsis}</span><span class="wp-section-head__line reveal-line"></span></div>
+          <p class="wp-synopsis__text reveal-fade">${t(w.synopsis)}</p>
+        </section>
+
+        <section class="wp-film">
+          <div class="wp-section-head"><span class="wp-section-head__label">${L.secFilm}</span><span class="wp-section-head__line reveal-line"></span></div>
+          ${filmFrame(w.film.src, w.film.poster)}
+          <p class="wp-film__caption reveal-fade">${w.title} — ${w.year} · ${t(w.meta)}</p>
+        </section>
+
+        <section class="wp-process">
+          <div class="wp-section-head"><span class="wp-section-head__label">${L.secProcess}</span><span class="wp-section-head__line reveal-line"></span></div>
+          ${chapters}
+        </section>
+
+        <section class="wp-section">
+          <div class="wp-section-head"><span class="wp-section-head__label">${L.secCredits}</span><span class="wp-section-head__line reveal-line"></span></div>
+          <div class="wp-credits__grid">
+            ${w.credits.map(c => `
+              <div class="wp-credits__row reveal-fade">
+                <span class="wp-credits__role">${t(c.role)}</span>
+                <span class="wp-credits__name">${t(c.name)}</span>
+              </div>`).join('')}
+          </div>
+        </section>`;
+    }
+
+    $('#workpage').innerHTML = main + `
       <nav class="wp-pn" aria-label="Project navigation">
         <a class="wp-pn__link" href="work.html?w=${prev.id}" data-cursor="hover">
           <span class="wp-pn__dir">← ${L.prev}</span>
@@ -597,28 +782,13 @@
       </nav>
     `;
 
-    /* film interaction */
-    const frame = $('#film-frame'), video = $('#film-video'), play = $('#film-play');
-    play.addEventListener('click', () => {
-      frame.classList.add('is-playing');
-      video.currentTime = 0;
-      video.muted = false;
-      video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
-    });
-    frame.addEventListener('click', (e) => {
-      if (!frame.classList.contains('is-playing') || e.target.closest('.wp-film__coverbtn')) return;
-      frame.classList.remove('is-playing');
-      video.pause();
-    });
-
-    /* hero entrance */
     const rows = $$('.wp-hero__title .row > span');
-    const intro = gsap.timeline({ delay: REDUCED ? 0 : .15 });
-    intro.fromTo('.wp-hero__cat', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .9, ease: 'power3.out' }, .05)
+    gsap.timeline({ delay: REDUCED ? 0 : .15 })
+      .fromTo('.wp-hero__cat', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .9, ease: 'power3.out' }, .05)
       .to(rows, { y: 0, duration: 1.3, stagger: .1, ease: 'power4.out' }, .15);
 
+    bindFilmFrames(document);
     initReveals(document);
-    /* chapter media slow-zoom release */
     $$('.wp-chapter__media').forEach(m => {
       ScrollTrigger.create({
         trigger: m, start: 'top 82%',
@@ -628,34 +798,24 @@
   }
 
   /* ============================================================
-     INFO PAGE 渲染
+     ABOUT
      ============================================================ */
-  function renderInfo() {
+  function renderAbout() {
     const L = I();
-    document.title = `${L.navInfo} — ${SITE.name}`;
-    $('#infopage').innerHTML = `
+    document.title = `${L.navAbout} — ${SITE.name}`;
+    $('#about-page').innerHTML = `
       <section class="info-intro">
         <p class="label reveal-fade" style="margin-bottom:1.5rem">${L.aboutLabel}</p>
         <h1 class="info-intro__text">${t(INFO.intro)}</h1>
       </section>
 
       <section class="info-block">
-        <div class="info-block__head"><span class="label">${L.capabilitiesLabel}</span><span class="wp-section-head__line reveal-line" style="flex:1"></span></div>
-        ${INFO.capabilities.map(c => `
+        <div class="info-block__head"><span class="label">${L.disciplinesLabel}</span><span class="wp-section-head__line reveal-line" style="flex:1"></span></div>
+        ${INFO.disciplines.map(c => `
           <div class="info-cap__row reveal-fade">
             <span class="info-cap__num">${c.label}</span>
             <h3 class="info-cap__name">${t(c.name)}</h3>
             <p class="info-cap__detail">${t(c.detail)}</p>
-          </div>`).join('')}
-      </section>
-
-      <section class="info-block">
-        <div class="info-block__head"><span class="label">${L.experienceLabel}</span><span class="wp-section-head__line reveal-line" style="flex:1"></span></div>
-        ${INFO.experience.map(e => `
-          <div class="info-list__row reveal-fade">
-            <span class="info-list__year">${e.year}</span>
-            <span class="info-list__what">${t(e.what)}</span>
-            <span class="info-list__where">${t(e.where)}</span>
           </div>`).join('')}
       </section>
 
@@ -689,12 +849,17 @@
 
     if (PAGE === 'home') { renderHome(); initHomeFx(); }
     else if (PAGE === 'work') { renderWork(); }
-    else if (PAGE === 'info') { renderInfo(); }
+    else if (PAGE === 'discipline') { renderDiscipline(); }
+    else if (PAGE === 'about') { renderAbout(); }
 
-    /* hero 标题行预置（preloader 期间隐藏在 mask 里） */
     ScrollTrigger.refresh();
-    scrollToHash();
-    /* 字体/图片加载完成后重算 */
+    if (location.hash) {
+      const target = $(location.hash);
+      if (target) setTimeout(() => {
+        if (lenis) lenis.scrollTo(target, { offset: -20 });
+        else target.scrollIntoView({ behavior: 'auto' });
+      }, 1200);
+    }
     window.addEventListener('load', () => ScrollTrigger.refresh());
   });
 })();
