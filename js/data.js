@@ -208,6 +208,16 @@ const WORKS = [
     meta: { en: "Real-Time Hologram FX", zh: "实时全息视效" },
   },
   {
+    id: "procedural-growth",
+    title: "PROCEDURAL GROWTH",
+    year: "2026",
+    discipline: "rtvfx",
+    case: false,
+    poster: "assets/img/growth-poster.jpg",
+    video: { src: "assets/video/procedural-growth.mp4", poster: "assets/img/growth-poster.jpg" },
+    meta: { en: "Procedural Growth FX", zh: "程序化生长视效" },
+  },
+  {
     id: "wormhole",
     title: "WORMHOLE",
     year: "2026",
