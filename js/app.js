@@ -393,10 +393,10 @@
     if (p) p.catch(() => { video.muted = true; video.play().catch(() => {}); });
   }
 
-  /* hover 播放绑定（网格单元 / 无案例卡片共用） */
+  /* hover 播放绑定（方向页网格单元） */
   function bindHoverVideo(scope) {
     if (!FINE || REDUCED) return;
-    $$('.study-cell, .selected-card', scope).forEach(cell => {
+    $$('.study-cell', scope).forEach(cell => {
       const v = $('video', cell);
       if (!v) return;
       cell.addEventListener('mouseenter', () => {
@@ -404,6 +404,41 @@
         v.play().catch(() => {});
       });
       cell.addEventListener('mouseleave', () => { v.pause(); });
+    });
+  }
+
+  /* 首页精选卡：进入视口自动静音循环播放，滚出暂停（浏览不单调且省性能；触屏仍显示封面省流量） */
+  function bindAutoplayVideo(scope) {
+    if (!FINE || REDUCED || !('IntersectionObserver' in window)) return;
+    const cards = $$('.selected-card', scope);
+    const inView = (card) => {
+      const r = card.getBoundingClientRect();
+      return r.bottom > -120 && r.top < innerHeight + 120;
+    };
+    const kick = (card) => {
+      const v = $('video', card);
+      if (!v || !inView(card)) return;
+      if (!v.readyState) v.load();
+      const p = v.play();
+      if (p) p.catch(() => {});
+    };
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(en => {
+        const v = $('video', en.target);
+        if (!v) return;
+        if (en.isIntersecting) {
+          if (!v.readyState) v.load();
+          const p = v.play();
+          if (p) p.catch(() => {});
+        } else {
+          v.pause();
+        }
+      });
+    }, { rootMargin: '120px' });
+    cards.forEach(card => io.observe(card));
+    /* 标签页切走时 Chrome 会暂停后台视频；回来后重新拉起在视野内的播放 */
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') cards.forEach(kick);
     });
   }
 
@@ -492,6 +527,7 @@
       .fromTo('.hero__foot', { opacity: 0 }, { opacity: 1, duration: 1 }, '-=.6');
 
     bindHoverVideo(document);
+    bindAutoplayVideo(document);
     bindLightboxLinks(document);
 
     initReveals(document);
