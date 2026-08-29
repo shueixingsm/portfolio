@@ -263,6 +263,11 @@ button { background: none; border: 0; color: inherit; font: inherit; cursor: poi
   color: var(--ink-dim); font-size: clamp(.8rem, 1.1vw, .95rem);
   letter-spacing: .3em; text-transform: uppercase;
 }
+.hero__sub {
+  margin-top: clamp(.75rem, 1.8vh, 1.25rem);
+  color: var(--ink-faint); font-size: clamp(.6875rem, .85vw, .8125rem);
+  letter-spacing: .28em; text-transform: uppercase;
+}
 .line-mask { display: block; overflow: hidden; }
 .line-mask > span { display: inline-block; transform: translateY(120%); }
 
@@ -294,37 +299,37 @@ button { background: none; border: 0; color: inherit; font: inherit; cursor: poi
 .section-head__count { font-size: .6875rem; letter-spacing: .15em; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 
 /* ============================================================
-   FEATURED — full-bleed cards
+   SELECTED WORKS — 全宽大图卡
    ============================================================ */
 .featured { padding: var(--pad-y) 0 clamp(3rem, 8vh, 6rem); }
 .featured__list { display: flex; flex-direction: column; gap: clamp(4rem, 12vh, 9rem); }
 
-.featured-card { display: block; padding: 0 var(--pad-x); }
-.featured-card__media {
+.selected-card { display: block; padding: 0 var(--pad-x); }
+.selected-card__media {
   position: relative; overflow: hidden;
   aspect-ratio: 16 / 8.5;
   background: var(--bg-2);
 }
-.featured-card__media img, .featured-card__media video {
+.selected-card__media img, .selected-card__media video {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
   transform: scale(1.06);
   transition: transform 1.2s var(--ease-out), opacity .7s;
   opacity: 1;
 }
-.featured-card__media video { opacity: 0; }
-.featured-card:hover .featured-card__media img { opacity: 0; }
-.featured-card:hover .featured-card__media video { opacity: 1; }
-.featured-card:hover .featured-card__media img,
-.featured-card:hover .featured-card__media video { transform: scale(1); }
+.selected-card__media video { opacity: 0; }
+.selected-card:hover .selected-card__media img { opacity: 0; }
+.selected-card:hover .selected-card__media video { opacity: 1; }
+.selected-card:hover .selected-card__media img,
+.selected-card:hover .selected-card__media video { transform: scale(1); }
 @media (hover: none) {
-  .featured-card__media video { display: none; }
+  .selected-card__media video { display: none; }
 }
-.featured-card__media::after {
+.selected-card__media::after {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(to top, rgba(10,10,11,.45), transparent 45%);
   pointer-events: none;
 }
-.featured-card__play {
+.selected-card__play {
   position: absolute; top: 50%; left: 50%; z-index: 2;
   width: clamp(72px, 8vw, 110px); height: clamp(72px, 8vw, 110px);
   margin: calc(clamp(72px, 8vw, 110px) / -2) 0 0 calc(clamp(72px, 8vw, 110px) / -2);
@@ -335,73 +340,207 @@ button { background: none; border: 0; color: inherit; font: inherit; cursor: poi
   transition: transform .6s var(--ease-out), background-color .5s;
   pointer-events: none;
 }
-.featured-card:hover .featured-card__play { transform: scale(1.12); background: rgba(10,10,11,.25); }
+.selected-card:hover .selected-card__play { transform: scale(1.12); background: rgba(10,10,11,.25); }
 
-.featured-card__row {
+.selected-card__row {
   display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
   margin-top: 1.25rem;
 }
-.featured-card__title {
+.selected-card__title {
   font-size: clamp(1.4rem, 2.6vw, 2.2rem); font-weight: 300;
   text-transform: uppercase; letter-spacing: .03em;
 }
-.featured-card__cat { font-size: .6875rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-dim); }
-.featured-card__meta {
+.selected-card__num {
+  font-size: .6875rem; font-weight: 400; letter-spacing: .15em;
+  color: var(--accent); margin-right: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.selected-card__cat { font-size: .6875rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-dim); text-align: right; }
+.selected-card__meta {
   display: flex; gap: 2rem; margin-top: .5rem;
   font-size: .6875rem; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-faint);
 }
 
 /* ============================================================
-   RECENT — row list with floating preview
+   EXPLORE BY DISCIPLINE — 方向入口行
    ============================================================ */
-.recent { padding: clamp(3rem, 8vh, 6rem) 0 var(--pad-y); position: relative; }
-.recent__list { border-top: 1px solid var(--line); }
-.work-row {
-  position: relative;
+.disciplines { padding: clamp(3rem, 8vh, 6rem) 0 var(--pad-y); }
+.disc-list { border-top: 1px solid var(--line); }
+.disc-row {
   display: grid;
-  grid-template-columns: 3.5rem 1fr auto auto 3rem;
+  grid-template-columns: 4.5rem 1fr auto 3rem;
   align-items: center; gap: clamp(1rem, 3vw, 3rem);
-  padding: clamp(1.4rem, 3vh, 2.2rem) var(--pad-x);
+  padding: clamp(1.8rem, 4.5vh, 3rem) var(--pad-x);
   border-bottom: 1px solid var(--line);
-  transition: padding-left .5s var(--ease-out);
+  transition: padding-left .5s var(--ease-out), background-color .5s;
 }
-.work-row:hover { padding-left: calc(var(--pad-x) + 1rem); }
-.work-row__num { font-size: .6875rem; letter-spacing: .15em; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-.work-row__title {
-  font-size: clamp(1.5rem, 4vw, 3.2rem); font-weight: 300;
+.disc-row:hover { padding-left: calc(var(--pad-x) + 1.25rem); background: var(--bg-2); }
+.disc-row__num { font-size: .6875rem; letter-spacing: .15em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.disc-row__title {
+  font-size: clamp(1.6rem, 4.5vw, 3.6rem); font-weight: 300;
   text-transform: uppercase; letter-spacing: .02em; line-height: 1.05;
-  color: var(--ink-dim);
-  transition: color .5s;
+  color: var(--ink-dim); transition: color .5s;
 }
-.work-row:hover .work-row__title { color: var(--ink); }
-.work-row__title em { font-family: var(--font-serif); font-style: italic; text-transform: none; letter-spacing: 0; }
-.work-row__cat, .work-row__year {
-  font-size: .6875rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-faint);
-}
-.work-row__arrow {
-  justify-self: end;
-  font-size: 1.1rem; color: var(--ink-dim);
+.disc-row:hover .disc-row__title { color: var(--ink); }
+.disc-row__note { font-size: .6875rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); }
+.disc-row__arrow {
+  justify-self: end; font-size: 1.2rem; color: var(--ink-dim);
   opacity: 0; transform: translateX(-12px);
   transition: opacity .5s, transform .5s var(--ease-out);
 }
-.work-row:hover .work-row__arrow { opacity: 1; transform: translateX(0); }
+.disc-row:hover .disc-row__arrow { opacity: 1; transform: translateX(0); }
 
-/* floating preview window */
-.work-preview {
-  position: fixed; z-index: 60; top: 0; left: 0;
-  width: clamp(260px, 24vw, 420px); aspect-ratio: 16 / 10;
-  pointer-events: none;
-  overflow: hidden;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(.85) rotate(-2deg);
-  will-change: transform;
+/* ============================================================
+   STUDIES GRID — 作品网格（VFX Studies / AI 实验 / Cinematics）
+   ============================================================ */
+.studies-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: clamp(2.5rem, 6vh, 4rem) clamp(1.5rem, 3vw, 2.5rem);
+  padding: 0 var(--pad-x);
 }
-.work-preview__img, .work-preview__video {
+.study-cell { display: block; }
+.study-cell__media {
+  position: relative; overflow: hidden;
+  aspect-ratio: 16 / 9; background: var(--bg-2);
+}
+.study-cell__media img, .study-cell__media video {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  transform: scale(1.05);
+  transition: transform 1.2s var(--ease-out), opacity .6s;
 }
-.work-preview__video { opacity: 0; transition: opacity .4s; }
-.work-preview.is-media-ready .work-preview__video { opacity: 1; }
-@media (pointer: coarse) { .work-preview { display: none; } }
+.study-cell__media video { opacity: 0; }
+.study-cell:hover .study-cell__media video { opacity: 1; }
+.study-cell:hover .study-cell__media img,
+.study-cell:hover .study-cell__media video { transform: scale(1); }
+@media (hover: none) { .study-cell__media video { display: none; } }
+.study-cell__play {
+  position: absolute; right: 1rem; bottom: 1rem; z-index: 2;
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 1px solid rgba(234,230,223,.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .55rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink); background: rgba(10,10,11,.3); backdrop-filter: blur(6px);
+  opacity: 0; transform: translateY(6px);
+  transition: opacity .5s, transform .5s var(--ease-out);
+  pointer-events: none;
+}
+.study-cell:hover .study-cell__play { opacity: 1; transform: translateY(0); }
+.study-cell__row {
+  display: flex; align-items: baseline; gap: 1rem;
+  margin-top: 1rem;
+}
+.study-cell__num { font-size: .6875rem; letter-spacing: .15em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.study-cell__title { font-size: clamp(1.05rem, 1.7vw, 1.4rem); font-weight: 300; text-transform: uppercase; letter-spacing: .03em; }
+.study-cell__meta {
+  display: flex; justify-content: space-between; gap: 1rem; margin-top: .4rem;
+  font-size: .6875rem; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-faint);
+}
+
+/* ============================================================
+   AI FILM — 原创作品大卡
+   ============================================================ */
+.originals-list { padding: 0 var(--pad-x); margin-bottom: var(--pad-y); }
+.original-card { display: block; }
+.original-card__media {
+  position: relative; overflow: hidden;
+  aspect-ratio: 16 / 7; background: var(--bg-2);
+}
+.original-card__media img, .original-card__media video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  transform: scale(1.05); transition: transform 1.2s var(--ease-out), opacity .6s;
+}
+.original-card__media video { opacity: 0; }
+.original-card:hover .original-card__media video { opacity: 1; }
+.original-card:hover .original-card__media img,
+.original-card:hover .original-card__media video { transform: scale(1); }
+@media (hover: none) { .original-card__media video { display: none; } }
+.original-card__row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  margin-top: 1.25rem;
+}
+.original-card__title { font-size: clamp(1.6rem, 3.4vw, 2.8rem); font-weight: 300; text-transform: uppercase; letter-spacing: .02em; }
+.original-card__sub { font-size: .6875rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-dim); text-align: right; }
+
+/* ============================================================
+   DISCIPLINE 方向页
+   ============================================================ */
+.dp-hero {
+  min-height: 62svh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: calc(var(--nav-h) + 2rem) var(--pad-x) clamp(2.5rem, 6vh, 4rem);
+}
+.dp-hero__cat { color: var(--accent); margin-bottom: 1.25rem; }
+.dp-hero__title {
+  font-size: clamp(2.6rem, 9vw, 8.5rem);
+  font-weight: 300; line-height: .98; text-transform: uppercase; letter-spacing: .01em;
+}
+.dp-hero__title .row { display: block; overflow: hidden; }
+.dp-hero__title .row > span { display: inline-block; transform: translateY(110%); }
+.dp-hero__desc {
+  margin-top: 1.75rem; max-width: 62ch;
+  color: var(--ink-dim); font-size: clamp(.95rem, 1.15vw, 1.1rem); line-height: 1.7;
+}
+.dp-body { padding-bottom: var(--pad-y); }
+.dp-body > .wp-section-head { margin-top: var(--pad-y); }
+
+/* ============================================================
+   旗舰案例附加组件（分集 / 概念 / 过程 / 通用 Section）
+   ============================================================ */
+.wp-section { padding: clamp(3rem, 9vh, 6rem) var(--pad-x) 0; }
+.wp-section:last-child { padding-bottom: var(--pad-y); }
+.ep-block { margin-bottom: clamp(2.5rem, 6vh, 4rem); }
+.ep-block__label {
+  font-size: .6875rem; letter-spacing: .25em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 1rem;
+}
+.concept-list { max-width: 980px; }
+.concept-row {
+  display: grid; grid-template-columns: minmax(9rem, 16rem) 1fr; gap: 2rem;
+  padding: 1.6rem 0; border-bottom: 1px solid var(--line);
+  align-items: baseline;
+}
+.concept-row:first-child { border-top: 1px solid var(--line); }
+.concept-row__k { font-size: .6875rem; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-faint); }
+.concept-row__v { font-size: clamp(1.05rem, 1.7vw, 1.4rem); font-weight: 300; line-height: 1.55; }
+.process-list { max-width: 1100px; }
+.process-row {
+  display: grid; grid-template-columns: 3.5rem 1fr 1.5fr; gap: 2rem;
+  padding: 1.7rem 0; border-bottom: 1px solid var(--line);
+  align-items: baseline;
+}
+.process-row:first-child { border-top: 1px solid var(--line); }
+.process-row__num { font-size: .6875rem; letter-spacing: .15em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.process-row__title { font-size: clamp(1.05rem, 1.9vw, 1.5rem); font-weight: 300; text-transform: uppercase; letter-spacing: .03em; }
+.process-row__text { color: var(--ink-dim); font-size: .9375rem; line-height: 1.75; }
+
+/* ============================================================
+   LIGHTBOX — 网格条目放大播放
+   ============================================================ */
+.lightbox {
+  position: fixed; inset: 0; z-index: 250;
+  background: rgba(10,10,11,.96);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  opacity: 0; pointer-events: none;
+  transition: opacity .45s var(--ease-out);
+}
+.lightbox.is-open { opacity: 1; pointer-events: auto; }
+.lightbox__stage { width: min(92vw, 1500px); }
+.lightbox__stage video { width: 100%; max-height: 80svh; display: block; background: #000; }
+.lightbox__cap {
+  width: min(92vw, 1500px);
+  display: flex; justify-content: space-between; gap: 1rem;
+  margin-top: 1rem;
+  font-size: .6875rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-dim);
+}
+.lightbox__close {
+  position: absolute; top: clamp(1rem, 3vh, 2rem); right: clamp(1rem, 3vw, 2.5rem);
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(234,230,223,.4); color: var(--ink);
+  font-size: .9rem;
+  transition: border-color .4s, transform .4s var(--ease-out);
+}
+.lightbox__close:hover { border-color: rgba(234,230,223,.8); transform: rotate(90deg); }
 
 /* ============================================================
    ABOUT STRIP
@@ -619,6 +758,7 @@ button { background: none; border: 0; color: inherit; font: inherit; cursor: poi
    INFO PAGE
    ============================================================ */
 .infopage { min-height: 100svh; padding-top: calc(var(--nav-h) + clamp(3rem, 10vh, 7rem)); }
+.aboutpage { min-height: 100svh; padding-top: calc(var(--nav-h) + clamp(3rem, 10vh, 7rem)); padding-bottom: var(--pad-y); }
 .info-intro { padding: 0 var(--pad-x) var(--pad-y); }
 .info-intro__text {
   font-size: clamp(1.8rem, 4.6vw, 4rem);
@@ -674,9 +814,9 @@ button { background: none; border: 0; color: inherit; font: inherit; cursor: poi
   .hero__title { font-size: clamp(3rem, 16.5vw, 6rem); }
   .hero__foot { flex-direction: column; align-items: flex-start; gap: .6rem; }
   .hero__foot-scroll { display: none; }
-  .work-row { grid-template-columns: 2.2rem 1fr auto; }
-  .work-row__cat, .work-row__arrow { display: none; }
-  .work-row__year { justify-self: end; }
+  .studies-grid { grid-template-columns: 1fr; }
+  .disc-row { grid-template-columns: 2.5rem 1fr 2rem; }
+  .disc-row__note { display: none; }
   .footer__meta { grid-template-columns: 1fr; gap: 1.5rem; }
   .wp-pn { grid-template-columns: 1fr; }
   .wp-pn__link--next { border-left: 0; border-top: 1px solid var(--line); align-items: flex-start; text-align: left; }
@@ -684,10 +824,13 @@ button { background: none; border: 0; color: inherit; font: inherit; cursor: poi
   .info-cap__detail { grid-column: 2; }
   .info-list__row { grid-template-columns: auto 1fr; }
   .info-list__where { grid-column: 2; text-align: left; }
+  .concept-row { grid-template-columns: 1fr; gap: .5rem; }
+  .process-row { grid-template-columns: 1fr; gap: .4rem; }
+  .selected-card__cat { display: none; }
 }
 
 @media (max-width: 480px) {
-  .featured-card__row { flex-direction: column; gap: .3rem; }
+  .selected-card__row { flex-direction: column; gap: .3rem; }
   .wp-meta { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
   .wp-credits__row { grid-template-columns: 1fr; gap: .3rem; }
   .wp-credits__name { text-align: left; }
