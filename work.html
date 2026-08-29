@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Work â€” YOUR NAME</title>
+  <title>Work — Xianglin Qu</title>
   <meta name="description" content="Project case study.">
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -11,8 +11,11 @@
 
   <!-- Preloader -->
   <div class="preloader" id="preloader" aria-hidden="true">
-    <div class="preloader__count" id="preloader-count">00</div>
-    <div class="preloader__name" id="preloader-name"></div>
+    <div class="preloader__inner">
+      <div class="preloader__name" id="preloader-name"></div>
+      <div class="preloader__line"><span class="preloader__bar" id="preloader-bar"></span></div>
+      <div class="preloader__count" id="preloader-count">000</div>
+    </div>
   </div>
 
   <!-- Custom cursor -->
@@ -24,14 +27,14 @@
     <a class="nav__logo" href="index.html" data-cursor="hover" id="nav-logo"></a>
     <div class="nav__right">
       <nav class="nav__links" aria-label="Primary">
-        <a href="index.html#work" class="nav__link" data-cursor="hover">Work</a>
-        <a href="about.html" class="nav__link" data-cursor="hover">Info</a>
+        <a href="index.html#work" class="nav__link is-active" data-cursor="hover">Work</a>
+        <a href="about.html" class="nav__link" data-cursor="hover">About</a>
         <a href="mailto:hello@yourname.com" class="nav__link" id="nav-contact" data-cursor="hover">Contact</a>
       </nav>
       <div class="lang-switch" role="group" aria-label="Language">
         <button class="lang-switch__btn" data-lang="en" data-cursor="hover">EN</button>
         <span class="lang-switch__sep">/</span>
-        <button class="lang-switch__btn" data-lang="zh" data-cursor="hover">ä¸­</button>
+        <button class="lang-switch__btn" data-lang="zh" data-cursor="hover">中</button>
       </div>
     </div>
     <button class="nav__burger" id="nav-burger" aria-label="Open menu" aria-expanded="false" data-cursor="hover">
@@ -42,19 +45,19 @@
   <div class="menu" id="menu" aria-hidden="true">
     <div class="menu__inner">
       <a href="index.html" class="menu__link" data-cursor="hover"><span class="menu__num">01</span>Work</a>
-      <a href="about.html" class="menu__link" data-cursor="hover"><span class="menu__num">02</span>Info</a>
+      <a href="about.html" class="menu__link" data-cursor="hover"><span class="menu__num">02</span>About</a>
       <a href="#" id="menu-contact" class="menu__link" data-cursor="hover"><span class="menu__num">03</span>Contact</a>
     </div>
     <div class="menu__foot" id="menu-foot"></div>
   </div>
 
-  <!-- æ•´é¡µå†…å®¹ç”± app.js æŒ‰ ?w=<work-id> ä»Ž data.js æ¸²æŸ“ -->
+  <!-- 案例页内容由 app.js 按 ?w=<work-id> 从 data.js 渲染（旗舰/普通两种布局） -->
   <main class="workpage" id="workpage"><!-- JS --></main>
 
   <!-- FOOTER -->
   <footer class="footer" id="contact">
     <div class="footer__inner">
-      <p class="footer__kicker" id="footer-kicker">Have a project in mind?</p>
+      <p class="footer__kicker" id="footer-kicker">Contact</p>
       <a class="footer__cta" id="footer-email" href="mailto:hello@yourname.com" data-cursor="hover">Let's talk</a>
       <div class="footer__meta">
         <div class="footer__col">
@@ -66,7 +69,7 @@
           <span class="footer__time" id="footer-time">--:--</span>
         </div>
         <div class="footer__col">
-          <span class="footer__label">Â© <span id="footer-year"></span></span>
+          <span class="footer__label">© <span id="footer-year"></span></span>
           <span class="footer__dim" id="footer-name"></span>
         </div>
       </div>
