@@ -748,6 +748,11 @@
           </div>
         </section>
 
+        ${w.quote ? `
+        <section class="wp-quote">
+          <p class="wp-quote__text reveal-fade">${t(w.quote)}</p>
+        </section>` : ''}
+
         <section class="wp-section">
           <div class="wp-section-head"><span class="wp-section-head__label">05 — ${L.secCredits}</span><span class="wp-section-head__line reveal-line"></span></div>
           <div class="wp-credits__grid">
