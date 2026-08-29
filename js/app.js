@@ -177,6 +177,7 @@
      ============================================================ */
   function runPreloader(onDone) {
     const pre = $('#preloader'), count = $('#preloader-count'), nameEl = $('#preloader-name');
+    const line = $('.preloader__line'), bar = $('#preloader-bar'), inner = $('.preloader__inner');
     let switched = false;
     try { switched = sessionStorage.getItem('lang-switched') === '1'; sessionStorage.removeItem('lang-switched'); } catch (e) {}
     if (REDUCED || switched) { pre.remove(); onDone(); return; }
@@ -196,7 +197,7 @@
       finish();
     }, 4000);
     const state = { v: 0 };
-    gsap.set(nameEl, { opacity: 0, y: 12 });
+    gsap.set(nameEl, { opacity: 0, y: 14 });
     const tl = gsap.timeline({
       onComplete() {
         clearTimeout(guard);
@@ -207,12 +208,17 @@
         });
       },
     });
-    tl.to(nameEl, { opacity: 1, y: 0, duration: .7, ease: 'power3.out' }, 0)
+    tl.to(nameEl, { opacity: 1, y: 0, duration: .8, ease: 'power3.out' }, 0)
+      .to(line, { opacity: 1, duration: .6, ease: 'power1.out' }, .1)
+      .to(count, { opacity: 1, duration: .5 }, .2)
       .to(state, {
-        v: 100, duration: 1.5, ease: 'power2.inOut',
-        onUpdate: () => { count.textContent = pad2(Math.round(state.v)); },
-      }, .15)
-      .to([count, nameEl], { opacity: 0, duration: .35, ease: 'power1.in' }, '-=.1');
+        v: 100, duration: 1.6, ease: 'power2.inOut',
+        onUpdate: () => {
+          count.textContent = String(Math.round(state.v)).padStart(3, '0');
+          gsap.set(bar, { scaleX: state.v / 100 });
+        },
+      }, .3)
+      .to(inner, { opacity: 0, y: -14, duration: .4, ease: 'power1.in' }, '-=.05');
   }
 
   /* ============================================================
