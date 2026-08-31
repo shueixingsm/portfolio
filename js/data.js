@@ -84,6 +84,7 @@ const DISCIPLINES = [
       zh: "原创系列与生成影像实验——用生成式视频模型构建的叙事作品。",
     },
     note: { en: "Original Works / Experiments", zh: "原创作品 / 实验" },
+    media: { src: "assets/video/zhangwei-preview.mp4", poster: "assets/img/zhangwei/zw-ep01-poster.jpg" },
   },
   {
     id: "rtvfx",
@@ -94,6 +95,7 @@ const DISCIPLINES = [
       zh: "实时视效研究——火焰、烟雾、粒子与能量，全部实时解算与渲染。",
     },
     note: { en: "Niagara · Houdini · FX Studies", zh: "Niagara · Houdini · FX 研究" },
+    media: { src: "assets/video/holo.mp4", poster: "assets/img/holo-poster.jpg" },
   },
   {
     id: "rtcinematics",
@@ -104,6 +106,7 @@ const DISCIPLINES = [
       zh: "Unreal Engine 中的灯光、渲染与镜头——实时运行的电影级序列。",
     },
     note: { en: "Unreal Engine 5 · Lighting / Rendering / Sequencer", zh: "Unreal Engine 5 · 灯光 / 渲染 / Sequencer" },
+    media: { src: "assets/video/procedural-growth.mp4", poster: "assets/img/growth-poster.jpg" },
   },
 ];
 
