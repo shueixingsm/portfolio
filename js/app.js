@@ -413,10 +413,11 @@
     });
   }
 
-  /* 首页精选卡：进入视口自动静音循环播放，滚出暂停（浏览不单调且省性能；触屏仍显示封面省流量） */
-  function bindAutoplayVideo(scope) {
+  /* 视口内自动静音播放、滚出暂停；用于首页精选卡 / 方向行 / 方向页网格（触屏不播省流量） */
+  function bindAutoplayVideo(scope, selector) {
+    const sel = selector || '.selected-card';
     if (!FINE || REDUCED || !('IntersectionObserver' in window)) return;
-    const cards = $$('.selected-card', scope);
+    const cards = $$(sel, scope);
     const inView = (card) => {
       const r = card.getBoundingClientRect();
       return r.bottom > -120 && r.top < innerHeight + 120;
@@ -435,9 +436,10 @@
         if (en.isIntersecting) {
           if (!v.readyState) v.load();
           const p = v.play();
-          if (p) p.catch(() => {});
+          if (p) p.then(() => en.target.classList.add('is-playing')).catch(() => {});
         } else {
           v.pause();
+          en.target.classList.remove('is-playing');
         }
       });
     }, { rootMargin: '120px' });
@@ -501,9 +503,14 @@
       </a>`;
     }).join('');
 
-    /* 方向入口 */
+    /* 方向入口（视频背景行） */
     $('#disc-list').innerHTML = DISCIPLINES.map(d => `
       <a class="disc-row" href="discipline.html?d=${d.id}" data-cursor="hover">
+        <div class="disc-row__bg" aria-hidden="true">
+          <img src="${d.media.poster}" alt="" loading="lazy">
+          <video muted loop playsinline preload="none" src="${d.media.src}"></video>
+          <span class="disc-row__shade"></span>
+        </div>
         <span class="disc-row__num">${d.num}</span>
         <span class="disc-row__title">${t(d.title)}</span>
         <span class="disc-row__note">${t(d.note)}</span>
@@ -533,13 +540,14 @@
       .fromTo('.hero__foot', { opacity: 0 }, { opacity: 1, duration: 1 }, '-=.6');
 
     bindHoverVideo(document);
-    bindAutoplayVideo(document);
+    bindAutoplayVideo(document, '.selected-card');
+    bindAutoplayVideo(document, '.disc-row');
     bindLightboxLinks(document);
 
     initReveals(document);
-    /* 精选大卡随滚动展开：收拢(内缩+缩小+压暗) → 全幅，scrub 跟手 */
+    /* 精选大卡 + 方向行背景：滚动展开（收拢内缩压暗 → 全幅），scrub 跟手 */
     if (!REDUCED) {
-      $$('.selected-card__media', document).forEach(media => {
+      $$('.selected-card__media, .disc-row__bg', document).forEach(media => {
         gsap.fromTo(media,
           { clipPath: 'inset(7% 10% 7% 10% round 2px)', scale: .95, filter: 'brightness(.7)' },
           {
@@ -636,6 +644,7 @@
       .to(rows, { y: 0, duration: 1.2, stagger: .08, ease: 'power4.out' }, .15);
 
     bindHoverVideo(document);
+    bindAutoplayVideo(document, '.study-cell');
     bindLightboxLinks(document);
     initReveals(document);
     /* 原创大卡 hover 播放 */
