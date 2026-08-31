@@ -60,8 +60,20 @@
       this._resize();
       this._events();
       if (REDUCED) { this._draw(0); return; }
-      this._loop = (t) => { this._draw(t); this._raf = requestAnimationFrame(this._loop); };
-      this._raf = requestAnimationFrame(this._loop);
+      /* 性能：低分辨率渲染 + 30fps 节流 + 滚出视野即停（雾状流光无感知差异） */
+      this._running = false;
+      this._last = 0;
+      this._loop = (t) => {
+        if (!this._running) return;
+        if (t - this._last >= 33) { this._last = t; this._draw(t); }
+        this._raf = requestAnimationFrame(this._loop);
+      };
+      const io = new IntersectionObserver((en) => {
+        const on = en[0].isIntersecting;
+        if (on && !this._running) { this._running = true; this._raf = requestAnimationFrame(this._loop); }
+        else if (!on && this._running) { this._running = false; cancelAnimationFrame(this._raf); }
+      }, { rootMargin: '80px' });
+      io.observe(canvas);
     }
     _build() {
       const gl = this.gl;
@@ -142,7 +154,7 @@
       window.addEventListener('resize', () => this._resize(), { passive: true });
     }
     _resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5) * 0.6;
       const r = this.canvas.getBoundingClientRect();
       this.canvas.width = Math.max(2, Math.round(r.width * dpr));
       this.canvas.height = Math.max(2, Math.round(r.height * dpr));
@@ -413,40 +425,59 @@
     });
   }
 
-  /* 视口内自动静音播放、滚出暂停；用于首页精选卡 / 方向行 / 方向页网格（触屏不播省流量） */
+  /* 视口内自动播放——「单一活跃播放器」策略：
+     只有最靠近屏幕中心的那一个视频在播，其余全部暂停（限制解码/带宽，避免卡顿） */
   function bindAutoplayVideo(scope, selector) {
     const sel = selector || '.selected-card';
     if (!FINE || REDUCED || !('IntersectionObserver' in window)) return;
     const cards = $$(sel, scope);
-    const inView = (card) => {
+    const visible = new Set();
+    let timer = null;
+    const centerDist = (card) => {
       const r = card.getBoundingClientRect();
-      return r.bottom > -120 && r.top < innerHeight + 120;
+      const c = Math.min(Math.max((r.top + r.bottom) / 2, 0), innerHeight);
+      return Math.abs(c - innerHeight / 2);
     };
-    const kick = (card) => {
-      const v = $('video', card);
-      if (!v || !inView(card)) return;
-      if (!v.readyState) v.load();
-      const p = v.play();
-      if (p) p.catch(() => {});
+    const update = () => {
+      let best = null, bestD = Infinity;
+      visible.forEach(card => {
+        const d = centerDist(card);
+        if (d < bestD) { bestD = d; best = card; }
+      });
+      cards.forEach(card => {
+        const v = $('video', card);
+        if (!v) return;
+        if (card === best) {
+          if (!v.readyState) v.load();
+          const p = v.play();
+          if (p) p.then(() => card.classList.add('is-playing')).catch(() => {});
+        } else if (!v.paused) {
+          v.pause();
+          card.classList.remove('is-playing');
+        }
+      });
     };
     const io = new IntersectionObserver((entries) => {
       entries.forEach(en => {
-        const v = $('video', en.target);
-        if (!v) return;
         if (en.isIntersecting) {
-          if (!v.readyState) v.load();
-          const p = v.play();
-          if (p) p.then(() => en.target.classList.add('is-playing')).catch(() => {});
+          visible.add(en.target);
         } else {
-          v.pause();
-          en.target.classList.remove('is-playing');
+          visible.delete(en.target);
+          const v = $('video', en.target);
+          if (v) { v.pause(); en.target.classList.remove('is-playing'); }
         }
       });
-    }, { rootMargin: '120px' });
-    cards.forEach(card => io.observe(card));
-    /* 标签页切走时 Chrome 会暂停后台视频；回来后重新拉起在视野内的播放 */
+      update();
+    }, { rootMargin: '160px' });
+    cards.forEach(c => io.observe(c));
+    const onScroll = () => {
+      if (timer) return;
+      timer = setTimeout(() => { timer = null; update(); }, 220);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    /* 标签页切走时 Chrome 会暂停后台视频；回来后重新拉起中心那一个 */
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') cards.forEach(kick);
+      if (document.visibilityState === 'visible') update();
     });
   }
 
@@ -492,6 +523,7 @@
           <img src="${w.poster}" alt="${w.title}" loading="lazy">
           <video muted loop playsinline preload="none" src="${hoverSrc}"></video>
           <span class="selected-card__play">${L.view}</span>
+          <span class="media-dim" aria-hidden="true"></span>
         </div>
         <div class="selected-card__row reveal-fade">
           <h3 class="selected-card__title"><span class="selected-card__num">${pad2(i + 1)}</span>${w.title}</h3>
@@ -510,6 +542,7 @@
           <img src="${d.media.poster}" alt="" loading="lazy">
           <video muted loop playsinline preload="none" src="${d.media.src}"></video>
           <span class="disc-row__shade"></span>
+          <span class="media-dim" aria-hidden="true"></span>
         </div>
         <span class="disc-row__num">${d.num}</span>
         <span class="disc-row__title">${t(d.title)}</span>
@@ -545,15 +578,20 @@
     bindLightboxLinks(document);
 
     initReveals(document);
-    /* 精选大卡 + 方向行背景：滚动展开（收拢内缩压暗 → 全幅），scrub 跟手 */
+    /* 精选大卡 + 方向行背景：滚动展开（收拢内缩 → 全幅 + 压暗→提亮），scrub 跟手；
+       亮度用遮罩层 opacity（纯合成）而非 filter，避免整卡重绘掉帧 */
     if (!REDUCED) {
-      $$('.selected-card__media, .disc-row__bg', document).forEach(media => {
-        gsap.fromTo(media,
-          { clipPath: 'inset(7% 10% 7% 10% round 2px)', scale: .95, filter: 'brightness(.7)' },
-          {
-            clipPath: 'inset(0% 0% 0% 0% round 0px)', scale: 1, filter: 'brightness(1)', ease: 'none',
-            scrollTrigger: { trigger: media.parentElement, start: 'top 88%', end: 'top 32%', scrub: .5 },
-          });
+      $$('.selected-card, .disc-row', document).forEach(card => {
+        const media = $('.selected-card__media, .disc-row__bg', card);
+        const dim = $('.media-dim', card);
+        if (!media) return;
+        const tl = gsap.timeline({
+          scrollTrigger: { trigger: card, start: 'top 88%', end: 'top 32%', scrub: .5 },
+        });
+        tl.fromTo(media,
+          { clipPath: 'inset(7% 10% 7% 10% round 2px)', scale: .95 },
+          { clipPath: 'inset(0% 0% 0% 0% round 0px)', scale: 1, ease: 'none' }, 0);
+        if (dim) tl.fromTo(dim, { opacity: .38 }, { opacity: 0, ease: 'none' }, 0);
       });
     }
     gsap.set('.disc-row', { opacity: 0, y: 30 });
