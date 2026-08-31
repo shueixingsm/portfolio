@@ -390,6 +390,14 @@ button { background: none; border: 0; color: inherit; font: inherit; cursor: poi
   font-size: .6875rem; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-faint);
 }
 
+.media-dim {
+  position: absolute; inset: 0; z-index: 3;
+  background: #0a0a0b;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+
 /* ============================================================
    EXPLORE BY DISCIPLINE — 方向入口行
    ============================================================ */
