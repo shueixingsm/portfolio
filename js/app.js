@@ -486,7 +486,7 @@
         ` data-lb="${hoverSrc}" data-poster="${w.poster}" data-title="${w.title}" data-meta="${t(w.meta || label)} · ${w.year}"`;
       return `
       <a class="selected-card${w.case ? '' : ' is-lb'}" href="${href}" data-cursor="hover"${lb}>
-        <div class="selected-card__media reveal-fade">
+        <div class="selected-card__media">
           <img src="${w.poster}" alt="${w.title}" loading="lazy">
           <video muted loop playsinline preload="none" src="${hoverSrc}"></video>
           <span class="selected-card__play">${L.view}</span>
@@ -537,6 +537,17 @@
     bindLightboxLinks(document);
 
     initReveals(document);
+    /* 精选大卡随滚动展开：收拢(内缩+缩小+压暗) → 全幅，scrub 跟手 */
+    if (!REDUCED) {
+      $$('.selected-card__media', document).forEach(media => {
+        gsap.fromTo(media,
+          { clipPath: 'inset(7% 10% 7% 10% round 2px)', scale: .95, filter: 'brightness(.7)' },
+          {
+            clipPath: 'inset(0% 0% 0% 0% round 0px)', scale: 1, filter: 'brightness(1)', ease: 'none',
+            scrollTrigger: { trigger: media.parentElement, start: 'top 88%', end: 'top 32%', scrub: .5 },
+          });
+      });
+    }
     gsap.set('.disc-row', { opacity: 0, y: 30 });
     ScrollTrigger.batch('.disc-row', {
       start: 'top 92%',
